@@ -5,6 +5,7 @@ This script connects to Gmail, reads the first x emails, and classifies them as 
 
 import os
 import pickle
+import re
 from typing import List, Dict, Optional
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -158,9 +159,11 @@ class GmailClassifier:
         # Combine subject and snippet for analysis
         content = f"{email.get('subject', '')} {email.get('snippet', '')}".lower()
         
-        # Check for urgent keywords
+        # Check for urgent keywords using word boundary matching to avoid false positives
         for keyword in urgent_keywords:
-            if keyword in content:
+            # Use regex with word boundaries for more accurate matching
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+            if re.search(pattern, content):
                 return 'urgent'
         
         # Check for urgent patterns

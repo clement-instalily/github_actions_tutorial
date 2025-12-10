@@ -49,6 +49,8 @@ class TestGmailClassifier(unittest.TestCase):
                 'date': '2024-01-01'
             }
         ]
+        # Create a classifier instance for testing classification methods
+        self.classifier = GmailClassifier.__new__(GmailClassifier)
     
     @patch('gmail_classifier.build')
     @patch('gmail_classifier.os.path.exists')
@@ -69,39 +71,33 @@ class TestGmailClassifier(unittest.TestCase):
     
     def test_classify_urgent_email_with_urgent_keyword(self):
         """Test classification of email with 'urgent' keyword."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
         email = self.sample_emails[0]
-        result = classifier.classify_email(email)
+        result = self.classifier.classify_email(email)
         self.assertEqual(result, 'urgent')
     
     def test_classify_not_urgent_email(self):
         """Test classification of normal email."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
         email = self.sample_emails[1]
-        result = classifier.classify_email(email)
+        result = self.classifier.classify_email(email)
         self.assertEqual(result, 'not urgent')
     
     def test_classify_email_with_critical_keyword(self):
         """Test classification of email with 'critical' keyword."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
         email = self.sample_emails[2]
-        result = classifier.classify_email(email)
+        result = self.classifier.classify_email(email)
         self.assertEqual(result, 'urgent')
     
     def test_classify_email_with_deadline_keyword(self):
         """Test classification of email with 'deadline' keyword."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
         email = self.sample_emails[4]
-        result = classifier.classify_email(email)
+        result = self.classifier.classify_email(email)
         self.assertEqual(result, 'urgent')
     
     def test_classify_multiple_emails(self):
         """Test classification of multiple emails."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
-        
         results = []
         for email in self.sample_emails:
-            classification = classifier.classify_email(email)
+            classification = self.classifier.classify_email(email)
             results.append(classification)
         
         # Should have 3 urgent and 2 not urgent
@@ -113,33 +109,27 @@ class TestGmailClassifier(unittest.TestCase):
     
     def test_classify_email_case_insensitive(self):
         """Test that classification is case-insensitive."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
-        
         email1 = {'subject': 'URGENT matter', 'snippet': '', 'sender': 'test@test.com'}
         email2 = {'subject': 'urgent matter', 'snippet': '', 'sender': 'test@test.com'}
         email3 = {'subject': 'Urgent matter', 'snippet': '', 'sender': 'test@test.com'}
         
-        self.assertEqual(classifier.classify_email(email1), 'urgent')
-        self.assertEqual(classifier.classify_email(email2), 'urgent')
-        self.assertEqual(classifier.classify_email(email3), 'urgent')
+        self.assertEqual(self.classifier.classify_email(email1), 'urgent')
+        self.assertEqual(self.classifier.classify_email(email2), 'urgent')
+        self.assertEqual(self.classifier.classify_email(email3), 'urgent')
     
     def test_classify_email_with_keyword_in_snippet(self):
         """Test classification when urgent keyword is in snippet."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
-        
         email = {
             'subject': 'Meeting tomorrow',
             'snippet': 'This is an urgent request for your attention',
             'sender': 'test@test.com'
         }
         
-        result = classifier.classify_email(email)
+        result = self.classifier.classify_email(email)
         self.assertEqual(result, 'urgent')
     
     def test_parse_email(self):
         """Test email parsing logic."""
-        classifier = GmailClassifier.__new__(GmailClassifier)
-        
         mock_msg = {
             'id': 'test123',
             'payload': {
@@ -152,12 +142,23 @@ class TestGmailClassifier(unittest.TestCase):
             'snippet': 'This is a test email snippet'
         }
         
-        result = classifier._parse_email(mock_msg)
+        result = self.classifier._parse_email(mock_msg)
         
         self.assertEqual(result['id'], 'test123')
         self.assertEqual(result['subject'], 'Test Subject')
         self.assertEqual(result['sender'], 'sender@example.com')
         self.assertEqual(result['snippet'], 'This is a test email snippet')
+    
+    def test_classify_no_false_positive_for_unimportant(self):
+        """Test that 'unimportant' doesn't match 'important' keyword."""
+        email = {
+            'subject': 'This is unimportant',
+            'snippet': 'Nothing to worry about',
+            'sender': 'test@test.com'
+        }
+        
+        result = self.classifier.classify_email(email)
+        self.assertEqual(result, 'not urgent')
 
 
 if __name__ == '__main__':
